@@ -25,6 +25,16 @@ def get_cpu_temperature():
         print(f"Error getting CPU temperature: {e}")
         return None
 
+def reboot_system():
+    """Reboots the Raspberry Pi using sudo reboot command."""
+    try:
+        print("Executing reboot command...")
+        subprocess.run(["sudo", "reboot"], check=True)
+        return True
+    except Exception as e:
+        print(f"Error executing reboot command: {e}")
+        return False
+
 def main():
     # Create a UDP socket.
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -51,6 +61,20 @@ def main():
                 response_message = "Error: Could not retrieve temperature."
                 print(f"Sending error response: '{response_message}' to {addr}")
                 sock.sendto(response_message.encode(), addr)
+        
+        elif received_message == "GET_BOOT":
+            print(f"Reboot command received from {addr}")
+            response_message = "Rebooting system..."
+            print(f"Sending response: '{response_message}' to {addr}")
+            # Send acknowledgment before rebooting
+            sock.sendto(response_message.encode(), addr)
+            
+            # Execute reboot command
+            reboot_success = reboot_system()
+            if not reboot_success:
+                error_message = "Error: Failed to execute reboot command."
+                print(f"Sending error response: '{error_message}' to {addr}")
+                sock.sendto(error_message.encode(), addr)
 
 if __name__ == "__main__":
     main()
